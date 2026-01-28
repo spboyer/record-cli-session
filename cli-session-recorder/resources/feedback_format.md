@@ -53,7 +53,19 @@ A JSON code block containing the complete session data:
     "start_time": "ISO8601",
     "end_time": "ISO8601",
     "working_directory": "string",
-    "git_branch": "string|null"
+    "git_branch": "string|null",
+    "log_dir": "string|null"
+  },
+  "environment": {
+    "os_name": "string",
+    "os_version": "string",
+    "shell": "string",
+    "python_version": "string",
+    "git_version": "string|null",
+    "gh_cli_version": "string|null",
+    "node_version": "string|null",
+    "copilot_version": "string|null",
+    "terminal": "string|null"
   },
   "exchanges": [
     {
@@ -65,10 +77,15 @@ A JSON code block containing the complete session data:
           "parameters": {},
           "result": "string|null",
           "error": "string|null",
-          "timestamp": "ISO8601"
+          "timestamp": "ISO8601",
+          "duration_ms": "number|null",
+          "retry_count": "number"
         }
       ],
-      "timestamp": "ISO8601"
+      "timestamp": "ISO8601",
+      "input_tokens_estimate": "number|null",
+      "output_tokens_estimate": "number|null",
+      "exchange_duration_ms": "number|null"
     }
   ],
   "errors": [
@@ -79,11 +96,40 @@ A JSON code block containing the complete session data:
       "timestamp": "ISO8601"
     }
   ],
+  "debug_logs": [
+    {
+      "file": "string",
+      "entries": [
+        {
+          "raw": "string",
+          "api_call": "string|null",
+          "error": "string|null",
+          "timing": "string|null",
+          "model": "string|null",
+          "token_usage": "string|null"
+        }
+      ]
+    }
+  ],
   "statistics": {
     "total_exchanges": "number",
     "total_tool_calls": "number",
     "total_errors": "number",
-    "duration_seconds": "number|null"
+    "duration_seconds": "number|null",
+    "token_estimates": {
+      "total_input": "number",
+      "total_output": "number",
+      "total": "number"
+    },
+    "tool_performance": {
+      "avg_duration_ms": "number|null",
+      "tool_usage": {
+        "tool_name": "number"
+      }
+    },
+    "error_breakdown": {
+      "error_type": "number"
+    }
   }
 }
 ```

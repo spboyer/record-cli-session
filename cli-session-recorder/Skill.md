@@ -31,31 +31,35 @@ try:
 except:
     branch = None
 
-# Initialize recorder
+# Initialize recorder with optional debug log parsing
 recorder = SessionRecorder(
     session_id=f"session-{datetime.now().strftime('%Y%m%d-%H%M%S')}",
-    model="claude-sonnet-4-20250514"  # from context
+    model="claude-sonnet-4-20250514",  # from context
+    log_dir=".logs"  # Optional: path to Copilot debug logs
 )
-recorder.start_recording(git_branch=branch)
+recorder.start_recording(git_branch=branch, capture_environment=True)
 ```
 
 ### During the Session
 
 For each exchange, capture:
-- User prompts
-- Tool calls and their results
-- Assistant responses
-- Any errors
+- User prompts (with token estimates)
+- Tool calls with timing and retry counts
+- Assistant responses (with token estimates)
+- Any errors with context
+- Exchange duration
 
 ```python
 # When user sends a prompt
 recorder.add_user_prompt("Fix the login bug")
 
-# When tools are called
+# When tools are called (with timing)
+recorder.start_tool_call()  # Start timing
 recorder.add_tool_call(
     name="grep",
     parameters={"pattern": "login", "path": "src/"},
-    result="Found in auth.py:42"
+    result="Found in auth.py:42",
+    retry_count=0  # Track retries
 )
 
 # When responding

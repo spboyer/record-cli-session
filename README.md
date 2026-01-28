@@ -14,14 +14,20 @@ The `copilot --log-dir .logs --log-level debug` command produces debug logs that
 2. Go to **Settings** → **Skills**
 3. Click **Upload Skill** and select the file
 
-### Claude Code / Copilot CLI
+### GitHub Copilot CLI
 
 ```bash
-# If a plugin marketplace is configured
-/plugin install cli-session-recorder
+# Clone and install to skills directory
+gh repo clone spboyer/record-cli-session
+mkdir -p ~/.copilot/skills
+cp -r record-cli-session/cli-session-recorder ~/.copilot/skills/
 ```
 
-Or manually add the skill folder to your workspace.
+Or as a one-liner:
+
+```bash
+gh repo clone spboyer/record-cli-session -- --depth 1 && cp -r record-cli-session/cli-session-recorder ~/.copilot/skills/ && rm -rf record-cli-session
+```
 
 ## Usage
 

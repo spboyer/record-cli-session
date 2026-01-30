@@ -238,123 +238,117 @@ When stopping a recording, analyze the session to auto-generate:
 
 See [resources/feedback_format.md](resources/feedback_format.md) for the complete output specification.
 
-### Quick Reference - Verbose Output
+### Required Output Format
 
-The output MUST include detailed exchange data like this example:
+The output MUST follow this exact structure with human-readable sections followed by structured data:
 
 ```markdown
-# CLI Session Feedback
-**Date**: 2024-01-28 14:23
-**Model**: claude-sonnet-4-20250514
-**Duration**: 15 minutes
+## Copilot CLI Session Feedback
 
-## Summary
-### Task Attempted
-Deploy a static HTML website to Azure using Azure Static Web Apps.
+## Session Info
 
-### Problems Encountered
-- SWA CLI artifact folder constraint error - current directory cannot be identical to artifact folder
-- Required creating a separate `dist` folder and copying files
+| Field | Value |
+|-------|-------|
+| **Session ID** | `session-uuid-here` |
+| **Duration** | ~10 minutes (HH:MM - HH:MM UTC) |
+| **Date** | YYYY-MM-DD |
+| **OS** | Darwin 24.6.0 (macOS) |
+| **Terminal** | iTerm.app |
+| **Copilot Version** | 0.0.400-0 |
 
-### Outcome
-**Success** - Static site deployed to https://salmon-rock-049daba0f.2.azurestaticapps.net
+## Environment
 
-## Statistics
-- **Total Exchanges**: 2
-- **Tool Calls**: 7
-- **Errors**: 1
+- **Python**: 3.14.2
+- **Node.js**: v22.18.0
+- **Git**: 2.50.1
+- **GitHub CLI**: 2.83.2
+- **Azure CLI**: Installed
+- **Azure Developer CLI (azd)**: 1.23.2
+
+## Task Summary
+
+**Goal**: [What the user was trying to accomplish]
+
+**Outcome**: ✅ SUCCESS / ❌ FAILED / ⚠️ PARTIAL - [Brief description]
 
 ---
 
-## Full Session Data (Machine Readable)
-```json
-{
-  "metadata": {...},
-  "exchanges": [
-    {
-      "user_prompt": "start",
-      "assistant_response": "Recording started for session-20240128-142312",
-      "tool_calls": [
-        {
-          "name": "bash",
-          "parameters": {"command": "git branch --show-current"},
-          "result": "main",
-          "timestamp": "2024-01-28T14:23:15",
-          "duration_ms": 45.2
-        }
-      ],
-      "timestamp": "2024-01-28T14:23:12"
-    },
-    {
-      "user_prompt": "help me deploy my app to azure",
-      "assistant_response": "Detected static HTML site. Recommended Azure Static Web Apps. Created resource group and SWA, deployed successfully.",
-      "tool_calls": [
-        {
-          "name": "bash",
-          "parameters": {"command": "ls -la && cat index.html"},
-          "result": "index.html - Hello World static site",
-          "timestamp": "2024-01-28T14:23:30",
-          "duration_ms": 120.5
-        },
-        {
-          "name": "glob",
-          "parameters": {"pattern": "**/*.{json,yaml,yml}"},
-          "result": ".github/workflows/run_test_deploy.yml",
-          "timestamp": "2024-01-28T14:23:32",
-          "duration_ms": 15.3
-        },
-        {
-          "name": "bash",
-          "parameters": {"command": "az account show"},
-          "result": "shboyer subscription",
-          "timestamp": "2024-01-28T14:23:35",
-          "duration_ms": 890.2
-        },
-        {
-          "name": "bash",
-          "parameters": {"command": "az group create && az staticwebapp create"},
-          "result": "Created recorded-swa-session in rg-recorded-swa-session",
-          "timestamp": "2024-01-28T14:24:00",
-          "duration_ms": 15230.5
-        },
-        {
-          "name": "bash",
-          "parameters": {"command": "swa deploy . --deployment-token"},
-          "result": null,
-          "error": "Current directory cannot be identical to artifact folder",
-          "timestamp": "2024-01-28T14:24:30",
-          "duration_ms": 2100.0
-        },
-        {
-          "name": "bash",
-          "parameters": {"command": "mkdir -p dist && cp index.html dist/ && swa deploy ./dist"},
-          "result": "Project deployed to https://salmon-rock-049daba0f.2.azurestaticapps.net",
-          "timestamp": "2024-01-28T14:25:00",
-          "duration_ms": 8500.3
-        }
-      ],
-      "timestamp": "2024-01-28T14:23:28"
-    }
-  ],
-  "errors": [
-    {
-      "type": "ToolError",
-      "message": "SWA CLI artifact folder constraint - current directory cannot be identical to artifact folder",
-      "context": {"resolution": "Created dist folder and copied files"},
-      "timestamp": "2024-01-28T14:24:32"
-    }
-  ],
-  "statistics": {
-    "total_exchanges": 2,
-    "total_tool_calls": 7,
-    "total_errors": 1,
-    "duration_seconds": 218,
-    "tool_performance": {
-      "avg_duration_ms": 3843.0,
-      "tool_usage": {"bash": 5, "glob": 1}
-    }
-  }
-}
+## Detailed Tool Calls & Responses
+
+### Exchange 1: [Exchange Title]
+
+**User Prompt**: "[Exact user input]"
+
+#### Tool Call 1.1: [tool_name]
+
+```
+Command: [command or description]
+Parameters: { "key": "value" }
+Result: [full output]
+Exit Code: 0
+```
+
+#### Tool Call 1.2: [tool_name]
+
+```
+Parameters: { "path": "/full/path/to/file" }
+Result: [file contents or action taken]
+```
+
+### Exchange 2: [Exchange Title]
+
+**User Prompt**: "[Exact user input]"
+
+#### Tool Call 2.1: [tool_name] (FAILED)
+
+```
+Command: [command that failed]
+Result: 
+ERROR: [error message]
+Exit Code: 1
+```
+
+#### Tool Call 2.2: [tool_name] (FIX)
+
+```
+Action: [What was done to fix the error]
+Result: [Success confirmation]
+```
+
+---
+
+## Files Created
+
+| File | Purpose | Size |
+|------|---------|------|
+| `filename.py` | Description | ~1.2 KB |
+
+## Resources Deployed (if applicable)
+
+| Resource Type | Name | Region |
+|--------------|------|--------|
+| Resource Group | rg-name | eastus2 |
+
+## Errors & Fixes
+
+| Error | Location | Fix Applied |
+|-------|----------|-------------|
+| Error message | file.ext | What was done |
+
+## Statistics
+
+| Metric | Value |
+|--------|-------|
+| Total Tool Calls | 35 |
+| bash commands | 18 |
+| file creates | 7 |
+| file edits | 3 |
+| Errors encountered | 2 |
+| Errors fixed | 2 |
+
+---
+
+_Generated by Copilot CLI Session Recorder_
 ```
 
 ## Guidelines

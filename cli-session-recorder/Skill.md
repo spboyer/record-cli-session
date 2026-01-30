@@ -40,38 +40,86 @@ recorder = SessionRecorder(
 recorder.start_recording(git_branch=branch, capture_environment=True)
 ```
 
-### During the Session
+### During the Session (VERBOSE CAPTURE)
 
-For each exchange, capture:
-- User prompts (with token estimates)
-- Tool calls with timing and retry counts
-- Assistant responses (with token estimates)
-- Any errors with context
-- Exchange duration
+**IMPORTANT**: Capture EVERY exchange with full verbosity. This is critical for debugging and feedback analysis.
+
+For **EACH** exchange, you MUST capture:
+- The exact user prompt (verbatim)
+- ALL tool calls with:
+  - Full tool name
+  - Complete parameters object
+  - Full result/output (truncate only if >2000 chars)
+  - Timing information
+  - Retry counts
+- The complete assistant response
+- Any errors with full context
+- Exchange timing
 
 ```python
-# When user sends a prompt
-recorder.add_user_prompt("Fix the login bug")
+# When user sends a prompt - capture EXACTLY what they typed
+recorder.add_user_prompt("help me deploy my app to azure")
 
-# When tools are called (with timing)
+# For EVERY tool call - capture full details
 recorder.start_tool_call()  # Start timing
 recorder.add_tool_call(
-    name="grep",
-    parameters={"pattern": "login", "path": "src/"},
-    result="Found in auth.py:42",
-    retry_count=0  # Track retries
+    name="bash",
+    parameters={
+        "command": "ls -la && cat index.html",
+        "description": "List files and view content"
+    },
+    result="total 8\n-rw-r--r--  1 user  staff  123 Jan 28 index.html\n<!DOCTYPE html>...",
+    retry_count=0
 )
 
-# When responding
-recorder.add_assistant_response("I found the issue...")
+recorder.start_tool_call()
+recorder.add_tool_call(
+    name="glob",
+    parameters={"pattern": "**/*.{json,yaml,yml}"},
+    result=".github/workflows/run_test_deploy.yml",
+    retry_count=0
+)
 
-# When errors occur
+recorder.start_tool_call()
+recorder.add_tool_call(
+    name="bash",
+    parameters={"command": "az group create --name rg-myapp --location eastus2"},
+    result='{"id": "/subscriptions/.../resourceGroups/rg-myapp", "location": "eastus2", "name": "rg-myapp"}',
+    retry_count=0
+)
+
+# Capture COMPLETE assistant response
+recorder.add_assistant_response(
+    "I detected a static HTML site. I'll deploy it to Azure Static Web Apps.\n\n"
+    "Created resource group `rg-myapp` and deploying..."
+)
+
+# When errors occur - capture FULL context
 recorder.add_error(
     error_type="ToolError",
-    message="File not found",
-    context={"path": "/missing/file.py"}
+    message="SWA CLI artifact folder constraint - current directory cannot be identical to artifact folder",
+    context={
+        "tool": "bash",
+        "command": "swa deploy . --deployment-token ...",
+        "resolution": "Created dist folder and copied files"
+    }
 )
 ```
+
+### Verbose Capture Checklist
+
+For each turn, ensure you record:
+
+| Item | Required | Details |
+|------|----------|---------|
+| User prompt | ✅ Yes | Exact text, no summarization |
+| Tool name | ✅ Yes | Full tool identifier |
+| Tool parameters | ✅ Yes | Complete parameters object |
+| Tool result | ✅ Yes | Full output (truncate >2000 chars with "[truncated]") |
+| Tool timing | ✅ Yes | Use `start_tool_call()` before each call |
+| Tool errors | ✅ Yes | Include if tool failed |
+| Assistant response | ✅ Yes | Complete response text |
+| Exchange timestamp | ✅ Auto | Captured automatically |
 
 ### Stopping Recording
 
@@ -177,7 +225,9 @@ When stopping a recording, analyze the session to auto-generate:
 
 See [resources/feedback_format.md](resources/feedback_format.md) for the complete output specification.
 
-### Quick Reference
+### Quick Reference - Verbose Output
+
+The output MUST include detailed exchange data like this example:
 
 ```markdown
 # CLI Session Feedback
@@ -187,19 +237,111 @@ See [resources/feedback_format.md](resources/feedback_format.md) for the complet
 
 ## Summary
 ### Task Attempted
-[What the user was trying to do]
+Deploy a static HTML website to Azure using Azure Static Web Apps.
 
 ### Problems Encountered
-- [Issues that arose]
+- SWA CLI artifact folder constraint error - current directory cannot be identical to artifact folder
+- Required creating a separate `dist` folder and copying files
 
 ### Outcome
-[Success/Failure/Partial]
+**Success** - Static site deployed to https://salmon-rock-049daba0f.2.azurestaticapps.net
+
+## Statistics
+- **Total Exchanges**: 2
+- **Tool Calls**: 7
+- **Errors**: 1
 
 ---
 
 ## Full Session Data (Machine Readable)
 ```json
-{ "metadata": {...}, "exchanges": [...], "errors": [...] }
+{
+  "metadata": {...},
+  "exchanges": [
+    {
+      "user_prompt": "start",
+      "assistant_response": "Recording started for session-20240128-142312",
+      "tool_calls": [
+        {
+          "name": "bash",
+          "parameters": {"command": "git branch --show-current"},
+          "result": "main",
+          "timestamp": "2024-01-28T14:23:15",
+          "duration_ms": 45.2
+        }
+      ],
+      "timestamp": "2024-01-28T14:23:12"
+    },
+    {
+      "user_prompt": "help me deploy my app to azure",
+      "assistant_response": "Detected static HTML site. Recommended Azure Static Web Apps. Created resource group and SWA, deployed successfully.",
+      "tool_calls": [
+        {
+          "name": "bash",
+          "parameters": {"command": "ls -la && cat index.html"},
+          "result": "index.html - Hello World static site",
+          "timestamp": "2024-01-28T14:23:30",
+          "duration_ms": 120.5
+        },
+        {
+          "name": "glob",
+          "parameters": {"pattern": "**/*.{json,yaml,yml}"},
+          "result": ".github/workflows/run_test_deploy.yml",
+          "timestamp": "2024-01-28T14:23:32",
+          "duration_ms": 15.3
+        },
+        {
+          "name": "bash",
+          "parameters": {"command": "az account show"},
+          "result": "shboyer subscription",
+          "timestamp": "2024-01-28T14:23:35",
+          "duration_ms": 890.2
+        },
+        {
+          "name": "bash",
+          "parameters": {"command": "az group create && az staticwebapp create"},
+          "result": "Created recorded-swa-session in rg-recorded-swa-session",
+          "timestamp": "2024-01-28T14:24:00",
+          "duration_ms": 15230.5
+        },
+        {
+          "name": "bash",
+          "parameters": {"command": "swa deploy . --deployment-token"},
+          "result": null,
+          "error": "Current directory cannot be identical to artifact folder",
+          "timestamp": "2024-01-28T14:24:30",
+          "duration_ms": 2100.0
+        },
+        {
+          "name": "bash",
+          "parameters": {"command": "mkdir -p dist && cp index.html dist/ && swa deploy ./dist"},
+          "result": "Project deployed to https://salmon-rock-049daba0f.2.azurestaticapps.net",
+          "timestamp": "2024-01-28T14:25:00",
+          "duration_ms": 8500.3
+        }
+      ],
+      "timestamp": "2024-01-28T14:23:28"
+    }
+  ],
+  "errors": [
+    {
+      "type": "ToolError",
+      "message": "SWA CLI artifact folder constraint - current directory cannot be identical to artifact folder",
+      "context": {"resolution": "Created dist folder and copied files"},
+      "timestamp": "2024-01-28T14:24:32"
+    }
+  ],
+  "statistics": {
+    "total_exchanges": 2,
+    "total_tool_calls": 7,
+    "total_errors": 1,
+    "duration_seconds": 218,
+    "tool_performance": {
+      "avg_duration_ms": 3843.0,
+      "tool_usage": {"bash": 5, "glob": 1}
+    }
+  }
+}
 ```
 
 ## Guidelines
@@ -209,3 +351,57 @@ See [resources/feedback_format.md](resources/feedback_format.md) for the complet
 3. **Be specific about problems** - vague feedback isn't helpful to developers
 4. **Include context** - working directory, git branch, and model info help reproduce issues
 5. **Respect user privacy** - don't share without explicit consent
+
+## Verbose/Debug Mode Best Practices
+
+To ensure maximum detail in recordings:
+
+### Capture Everything
+
+1. **User Input**: Record the exact prompt text, not a summary
+2. **Tool Invocations**: Every tool call with full parameters
+3. **Tool Responses**: Complete output (truncate only if necessary)
+4. **Errors**: Full error messages with stack traces if available
+5. **Timing**: How long each operation took
+
+### What Verbose Output Looks Like
+
+For each exchange, the output should show:
+
+```
+Exchange #2:
+├── User: "help me deploy my app to azure"
+├── Tools:
+│   ├── bash(command="ls -la && cat index.html") → "total 8\n-rw-r--r--..."
+│   ├── glob(pattern="**/*.{json,yaml,yml}") → ".github/workflows/..."
+│   ├── bash(command="az account show") → "shboyer subscription"
+│   ├── bash(command="az group create...") → "Created rg-..."
+│   ├── bash(command="swa deploy .") → ERROR: "artifact folder constraint"
+│   └── bash(command="mkdir -p dist && cp...") → "deployed to https://..."
+├── Assistant: "Detected static HTML site..."
+└── Duration: 2m 15s
+```
+
+### Common Issues That Reduce Verbosity
+
+| Issue | Problem | Fix |
+|-------|---------|-----|
+| Summarized prompts | "User asked about deployment" | Record exact: "help me deploy my app to azure" |
+| Missing tool params | `{...}` or empty | Include full parameters object |
+| Truncated results | "..." | Keep full output, truncate only >2000 chars |
+| Missing errors | Error not recorded | Always call `add_error()` on failures |
+| No timing | `null` duration | Always call `start_tool_call()` before each tool |
+
+### Debug Log Integration
+
+If Copilot debug logs are available (typically in `~/.copilot/logs/`), the recorder can parse them:
+
+```python
+recorder = SessionRecorder(
+    session_id="session-123",
+    model="claude-sonnet-4-20250514",
+    log_dir="~/.copilot/logs"  # Parse debug logs for extra detail
+)
+```
+
+This adds `debug_logs` to the output with API calls, timing, token usage, and errors from the log files.

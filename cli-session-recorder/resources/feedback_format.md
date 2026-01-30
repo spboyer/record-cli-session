@@ -2,6 +2,15 @@
 
 This document describes the output format for CLI session feedback files.
 
+## Key Requirement: VERBOSE OUTPUT
+
+**The output must capture full detail for debugging purposes.** This includes:
+- Exact user prompts (not summaries)
+- All tool calls with complete parameters and results
+- Full assistant responses
+- Timing information for performance analysis
+- Complete error context
+
 ## File Naming
 
 Files are named with a timestamp pattern:
@@ -43,7 +52,109 @@ Quick metrics about the session:
 
 ### Machine-Readable Section
 
-A JSON code block containing the complete session data:
+A JSON code block containing the complete session data. **This MUST include detailed exchange data.**
+
+#### Minimal vs Verbose Output Comparison
+
+❌ **BAD (minimal/summary)** - Missing detail:
+```json
+{
+  "session_id": "session-123",
+  "task_summary": "Deploy to Azure",
+  "outcome": "Success",
+  "errors": []
+}
+```
+
+✅ **GOOD (verbose)** - Full detail:
+```json
+{
+  "metadata": {
+    "session_id": "session-20260128-163354",
+    "model": "claude-sonnet-4-20250514",
+    "start_time": "2026-01-28T16:34:12.153180",
+    "end_time": "2026-01-28T16:38:46.981910",
+    "working_directory": "/Users/shboyer/github/plain-html-test",
+    "git_branch": "main"
+  },
+  "exchanges": [
+    {
+      "user_prompt": "start",
+      "assistant_response": "Recording started for session-20260128-163354",
+      "tool_calls": [
+        {
+          "name": "bash",
+          "parameters": {"command": "git branch --show-current"},
+          "result": "main",
+          "timestamp": "2026-01-28T16:34:15.000000",
+          "duration_ms": 45.2
+        }
+      ],
+      "timestamp": "2026-01-28T16:34:12.153180"
+    },
+    {
+      "user_prompt": "help me deploy my app to azure",
+      "assistant_response": "Detected static HTML site. Recommended Azure Static Web Apps. Created resource group and SWA, deployed successfully.",
+      "tool_calls": [
+        {
+          "name": "bash",
+          "parameters": {"command": "ls -la && cat index.html"},
+          "result": "index.html - Hello World static site",
+          "duration_ms": 120.5
+        },
+        {
+          "name": "glob",
+          "parameters": {"pattern": "**/*.{json,yaml,yml}"},
+          "result": ".github/workflows/run_test_deploy.yml",
+          "duration_ms": 15.3
+        },
+        {
+          "name": "bash",
+          "parameters": {"command": "az account show"},
+          "result": "shboyer subscription",
+          "duration_ms": 890.2
+        },
+        {
+          "name": "bash",
+          "parameters": {"command": "az group create && az staticwebapp create"},
+          "result": "Created recorded-swa-session in rg-recorded-swa-session",
+          "duration_ms": 15230.5
+        },
+        {
+          "name": "bash",
+          "parameters": {"command": "swa deploy . --deployment-token"},
+          "result": null,
+          "error": "Error: Current directory cannot be identical to artifact folder",
+          "duration_ms": 2100.0
+        },
+        {
+          "name": "bash",
+          "parameters": {"command": "mkdir -p dist && cp index.html dist/ && swa deploy ./dist"},
+          "result": "Project deployed to https://salmon-rock-049daba0f.2.azurestaticapps.net",
+          "duration_ms": 8500.3
+        }
+      ],
+      "timestamp": "2026-01-28T16:35:30.000000"
+    }
+  ],
+  "errors": [
+    {
+      "type": "ToolError",
+      "message": "SWA CLI artifact folder constraint - current directory cannot be identical to artifact folder",
+      "context": {"resolution": "Created dist folder and copied files"},
+      "timestamp": "2026-01-28T16:36:45.000000"
+    }
+  ],
+  "statistics": {
+    "total_exchanges": 2,
+    "total_tool_calls": 7,
+    "total_errors": 1,
+    "duration_seconds": 218
+  }
+}
+```
+
+#### Complete Schema
 
 ```json
 {

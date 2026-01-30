@@ -2,6 +2,22 @@
 
 This document describes the output format for CLI session feedback files.
 
+## ⚠️ MANDATORY: Complete Exchange Data
+
+**Every feedback report MUST contain the full `exchanges` array.** This is not optional.
+
+A valid report includes:
+- ✅ Complete `exchanges[]` with all user prompts, tool calls, and responses
+- ✅ Full `tool_calls[]` with name, parameters, result, and timing
+- ✅ All errors with context
+
+An invalid/incomplete report:
+- ❌ Summary-only without exchanges array
+- ❌ Missing tool call details
+- ❌ Truncated or summarized responses
+
+**Never save a report without comprehensive exchange data.**
+
 ## Key Requirement: VERBOSE OUTPUT
 
 **The output must capture full detail for debugging purposes.** This includes:

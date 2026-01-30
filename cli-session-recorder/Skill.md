@@ -7,6 +7,17 @@ description: Record CLI sessions and share structured feedback with developer te
 
 Record CLI sessions and generate shareable feedback with human-readable summaries and machine-readable data.
 
+## ⚠️ MANDATORY: Comprehensive Output
+
+**EVERY saved report MUST include the complete `exchanges` array with:**
+- All user prompts (verbatim)
+- All tool calls with full parameters AND results
+- All assistant responses
+- All errors with context
+- Timing information
+
+**This is NOT optional.** A report without detailed exchanges is incomplete and useless for debugging. Never save a summary-only report.
+
 ## Workflow
 
 ### Starting a Recording
@@ -128,14 +139,16 @@ When the user says "stop recording" or "save feedback":
 1. Stop the recorder
 2. Scrub sensitive data
 3. Ask for summary information
-4. Generate the feedback file
+4. Generate the feedback file **with FULL exchange data**
 
 ```python
 recorder.stop_recording()
 recorder.scrub_sensitive_data()
 ```
 
-### Generating Feedback
+### Generating Feedback (ALWAYS COMPREHENSIVE)
+
+**⚠️ CRITICAL**: The generated feedback MUST always include the complete `exchanges` array with all tool calls, parameters, and results. This is mandatory, not optional.
 
 When stopping the recording, **auto-generate** the summary by analyzing the recorded session:
 

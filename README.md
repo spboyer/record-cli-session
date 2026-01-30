@@ -1,18 +1,12 @@
 # CLI Session Recorder
 
-A skill for GitHub Copilot CLI that records your sessions and generates shareable feedback for developer teams.
+A skill for GitHub Copilot CLI that records your sessions and generates comprehensive, shareable feedback for developer teams.
 
 ## Why Use This?
 
-The `copilot --log-dir .logs --log-level debug` command produces debug logs that are hard to read and share. This skill creates **human-readable feedback** with an **AI-generated summary** plus **machine-readable data** for analysis.
+The `copilot --log-dir .logs --log-level debug` command produces debug logs that are hard to read and share. This skill creates **human-readable feedback** with **detailed tool call documentation** and **AI-generated summaries** for analysis and debugging.
 
 ## Installation
-
-### Claude.ai / Claude Desktop
-
-1. Download `cli-session-recorder.skill`
-2. Go to **Settings** → **Skills**
-3. Click **Upload Skill** and select the file
 
 ### GitHub Copilot CLI
 
@@ -46,10 +40,11 @@ Copilot will confirm recording has started.
 ### 2. Work Normally
 
 Just use Copilot as usual. Everything is captured automatically:
-- Your prompts
+- Your prompts (verbatim)
 - Copilot's responses
-- Tool calls (grep, view, edit, bash, etc.)
-- Errors and failures
+- All tool calls with parameters and results
+- Errors and fixes
+- Timing information
 
 ### 3. Stop & Save
 
@@ -87,47 +82,137 @@ After saving, share via explicit commands:
 /cli-session-recorder save --issue   # Create GitHub Issue
 ```
 
-Or use natural language:
-
-| Command | Result |
-|---------|--------|
-| *(default)* | Saves to `./feedback/feedback-YYYY-MM-DD-HHMM.md` |
-| "share as gist" | Creates a GitHub Gist (private by default) |
-| "create issue" | Opens a GitHub Issue in the current repo |
-
 ## Output Format
 
-The feedback file has two sections:
+The feedback file uses a comprehensive, human-readable format with detailed tool call documentation.
 
-### Human-Readable Summary
+### Example Output
+
 ```markdown
-# CLI Session Feedback
-**Date**: 2024-01-28 14:23
-**Model**: claude-sonnet-4-20250514
-**Duration**: 15 minutes
+## Copilot CLI Session Feedback
 
-## Summary
-### Task Attempted
-Fix login authentication bug causing 401 errors
+## Session Info
 
-### Problems Encountered
-- Initial grep search returned too many results
+| Field | Value |
+|-------|-------|
+| **Session ID** | `6dd7f2b4-e68a-4bc7-9309-619ff917d7ed` |
+| **Duration** | ~10 minutes (20:43 - 20:53 UTC) |
+| **Date** | 2026-01-30 |
+| **OS** | Darwin 24.6.0 (macOS) |
+| **Terminal** | iTerm.app |
+| **Copilot Version** | 0.0.400-0 |
 
-### Outcome
-Success - Bug identified and fixed in src/auth.py
+## Environment
+
+- **Python**: 3.14.2
+- **Node.js**: v22.18.0
+- **Git**: 2.50.1
+- **GitHub CLI**: 2.83.2
+
+## Task Summary
+
+**Goal**: Create a fortune cookie Azure Function app and deploy it to Azure
+
+**Outcome**: ✅ SUCCESS - Fortune cookie function deployed and operational
+
+---
+
+## Detailed Tool Calls & Responses
+
+### Exchange 1: Start Recording
+
+**User Prompt**: "start recording"
+
+#### Tool Call 1.1: bash
+
+```
+Command: git branch --show-current
+Result: main
+Exit Code: 0
 ```
 
-### Machine-Readable Data
-```json
-{
-  "metadata": { "session_id": "...", "model": "...", ... },
-  "exchanges": [ { "user_prompt": "...", "assistant_response": "...", "tool_calls": [...] } ],
-  "errors": [],
-  "statistics": { "total_exchanges": 5, "total_tool_calls": 12 }
-}
+### Exchange 2: Create & Deploy Function
+
+**User Prompt**: "Create a fortune cookie function app and deploy to Azure"
+
+#### Tool Call 2.1: bash
+
+```
+Command: func init --worker-runtime python --model V2
+Result: Writing function_app.py... Writing requirements.txt...
+Exit Code: 0
 ```
 
-The JSON section can be fed to an LLM for automated analysis.
+#### Tool Call 2.2: edit
+
+```
+Parameters: { "path": "/path/to/function_app.py" }
+Action: Added fortune cookie HTTP trigger function
+Result: File updated successfully
+```
+
+#### Tool Call 2.3: bash (FAILED)
+
+```
+Command: az bicep build --file infra/main.bicep
+Result: 
+ERROR BCP035: missing required properties: "name"
+Exit Code: 1
+```
+
+#### Tool Call 2.4: edit (FIX)
+
+```
+Action: Removed unused parameter from monitoring.bicep
+Result: File updated
+```
+
+#### Tool Call 2.5: bash
+
+```
+Command: azd up --no-prompt
+Result: Deployed to https://func-xxx.azurewebsites.net
+Exit Code: 0
+```
+
+---
+
+## Files Created
+
+| File | Purpose | Size |
+|------|---------|------|
+| `function_app.py` | Fortune cookie HTTP function | ~1.2 KB |
+| `azure.yaml` | azd configuration | 135 B |
+| `infra/main.bicep` | Main deployment template | 2.3 KB |
+
+## Resources Deployed
+
+| Resource Type | Name | Region |
+|--------------|------|--------|
+| Resource Group | rg-dev | eastus2 |
+| Function App | func-xxx | eastus2 |
+
+## Errors & Fixes
+
+| Error | Location | Fix Applied |
+|-------|----------|-------------|
+| BCP035: missing "name" | monitoring.bicep | Removed unused parameter |
+
+## Statistics
+
+| Metric | Value |
+|--------|-------|
+| Total Tool Calls | 35 |
+| bash commands | 18 |
+| file creates | 7 |
+| file edits | 3 |
+| Errors encountered | 2 |
+| Errors fixed | 2 |
+
+---
+
+_Generated by Copilot CLI Session Recorder_
+```
 
 ## Security
 
@@ -136,6 +221,7 @@ The recorder **automatically scrubs sensitive data** before saving:
 - Bearer tokens
 - GitHub Personal Access Tokens
 - OpenAI keys
+- Azure subscription IDs (partial)
 
 Always review the output before sharing externally.
 
@@ -156,13 +242,13 @@ Both explicit commands and natural language work. **Use explicit commands if nat
 
 ```
 cli-session-recorder/
-├── Skill.md              # Skill instructions for Claude
+├── SKILL.md                   # Skill instructions for Copilot
 └── resources/
     ├── session_recorder.py    # Core recording logic
     ├── format_feedback.py     # Output generation
     ├── share_gist.py          # GitHub Gist integration
     ├── share_issue.py         # GitHub Issue integration
-    └── feedback_format.md     # Output format spec
+    └── feedback_format.md     # Output format specification
 ```
 
 ## Requirements
